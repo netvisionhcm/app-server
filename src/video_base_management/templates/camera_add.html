@@ -1,0 +1,244 @@
+{% extends 'index.html' %} {% block css %}
+<link rel="stylesheet" />
+<style>
+  .w-20 {
+    width: 20% !important;
+  }
+</style>
+{% endblock %} {% block content %}
+
+<section class="col-lg-12 connectedSortable">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="fas fa-tv mr-1"></i>
+        {{title}}
+      </h3>
+      <div
+        class="spinner-border text-secondary"
+        id="loading"
+        role="status"
+        style="
+          width: 1.3rem;
+          height: 1.3rem;
+          margin-left: 1.2rem;
+          display: none;
+        "
+      >
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+    <!-- /.card-header -->
+
+    <div id="add_show_card" class="card-body" style="overflow: hidden">
+      <form role="form">
+        <div class="row">
+          <div class="col-sm-8">
+            <!-- text input -->
+            <div class="form-group">
+              <label>Camera ID</label>
+              <div>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"
+                      ><i class="fas fa-cog"></i
+                    ></span>
+                  </div>
+                  <input
+                    type="text"
+                    id="camera_id"
+                    class="form-control"
+                    data-mask=""
+                    im-insert="true"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-8">
+            <!-- text input -->
+            <div class="form-group">
+              <label>Camera Location</label>
+              <div>
+                <div class="input-group group-mac">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"
+                      ><i class="fas fa-cube"></i
+                    ></span>
+                  </div>
+                  <input
+                    type="text"
+                    id="camera_location"
+                    class="form-control"
+                    data-mask=""
+                    im-insert="true"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-8">
+            <!-- text input -->
+            <div class="form-group">
+              <label>Camera Coordinate</label>
+              <div>
+                <div class="input-group group-mac">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"
+                      ><i class="fas fa-cube"></i
+                    ></span>
+                  </div>
+                  <input
+                    type="text"
+                    id="camera_coordinate"
+                    class="form-control"
+                    data-mask=""
+                    im-insert="true"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-8">
+            <!-- text input -->
+            <div class="form-group">
+              <label>Camera IP Address</label>
+              <div>
+                <div class="input-group group-mac">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"
+                      ><i class="fas fa-cube"></i
+                    ></span>
+                  </div>
+                  <input
+                    type="text"
+                    id="camera_address"
+                    class="form-control"
+                    data-mask=""
+                    im-insert="true"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-8">
+            <!-- text input -->
+            <div class="form-group">
+              <label>Camera Port</label>
+              <div>
+                <div class="input-group group-mac">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"
+                      ><i class="fas fa-cube"></i
+                    ></span>
+                  </div>
+                  <input
+                    type="text"
+                    id="camera_port"
+                    class="form-control"
+                    data-mask=""
+                    im-insert="true"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-8">
+            <!-- text input -->
+            <div class="form-group">
+              <label>Camera URI</label>
+              <div>
+                <div class="input-group group-mac">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text"
+                      ><i class="fas fa-cube"></i
+                    ></span>
+                  </div>
+                  <input
+                    type="text"
+                    id="camera_uri"
+                    class="form-control"
+                    data-mask=""
+                    im-insert="true"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+      <div class="row">
+        <div class="col-sm-8">
+          <button type="submit" class="btn btn-primary" onclick="Submit()">
+            Submit
+          </button>
+          <button type="submit" class="btn btn-default" onclick="Cancel()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %} {% block script %}
+
+<script>
+  function Cancel() {
+    window.location.replace("/camera_list");
+  }
+
+  function Submit() {
+    $("#loading").show();
+    var camera_id = $("#camera_id").val();
+    var camera_location = $("#camera_location").val();
+    var camera_coordinate = $("#camera_coordinate").val();
+    var camera_address = $("#camera_address").val();
+    var camera_port = $("#camera_port").val();
+    var camera_uri = $("#camera_uri").val();
+
+    var request = $.ajax({
+      url: "/ajax_add_camera",
+      type: "post",
+      dataType: "json",
+      contentType: "application/json",
+      data: JSON.stringify({
+        camera_id: camera_id,
+        camera_location: camera_location,
+        camera_coordinate: camera_coordinate,
+        camera_address: camera_address,
+        camera_port: camera_port,
+        camera_uri: camera_uri,
+      }),
+      success: function (data) {
+        if (data.status == false) {
+          window.alert(data.results);
+        }
+        AddProcessing(
+          camera_id,
+          "infor",
+          data.status,
+          data.results,
+          "/camera_list"
+        );
+      },
+    });
+  }
+</script>
+
+{% endblock %}

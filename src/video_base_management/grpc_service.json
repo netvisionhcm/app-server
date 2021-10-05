@@ -1,0 +1,6 @@
+{
+    "server_ip":"127.0.0.1",
+     "ai_port": 50001,
+     "session_key_duration" : 9,
+     "autho_key_duration" : 9
+}

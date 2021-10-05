@@ -1,0 +1,95 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//         http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.ai_analysis";
+option java_outer_classname = "ai_analysis_proto";
+option objc_class_prefix = "AAP";
+
+package ai_analysis;
+
+// The ai analysis service definition.
+service AnalyService {
+    // Sends a add camera
+    rpc AddCamera (CameraInfo) returns (CameraResult) {}
+    // Sends a delete camera
+    rpc DelCamera (CameraId) returns (CameraResult) {}
+    
+    rpc GetFrames (PreProcessingData) returns (ProcessedData) {}
+
+}
+
+message Coordinate {
+	int32  posX = 1;
+	int32  posY = 2;
+}
+
+message Bbox {
+	int32  xMin = 1;
+	int32  yMin = 2;
+	int32  xMax = 3;
+	int32  yMax = 4;
+}
+
+message Area {
+				string		name	=	1;
+    repeated	Coordinate	border	=	2;
+
+}
+
+// The request message for getting video frame.
+message PreProcessingData {
+				string	camera_id		= 1;
+    repeated	Area	warning_list	= 2;
+    repeated	Area	danger_list		= 3;
+}
+
+// The respone message after object tracking
+message TrackingData {
+				Bbox	bbox		= 1;
+				int32 	person_id	= 2;
+	repeated 	string	equiqments	= 3;
+				string	time_in		= 4;
+                string  area_name   = 5;
+				bool	warning		= 6;
+				bool	danger		= 7;
+}
+
+message ProcessedData {
+				bytes			frame	= 1;
+	repeated 	TrackingData	persons	= 2;
+}
+
+// The camera id
+message CameraId {
+    string	camera_id	= 1;
+}
+
+// The Camera's if for adding new ip camera
+message CameraInfo {
+    string	camera_id	= 1;
+    string	location	= 2;
+    string	coordinates	= 3;
+    string	address		= 4;
+    string	port		= 5;
+    string	uri			= 6;
+}
+
+// The CameraResult message containing the greetings
+message CameraResult {
+    bool	success = 1;
+    string	message = 2;
+}

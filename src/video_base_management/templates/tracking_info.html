@@ -1,0 +1,125 @@
+{% extends 'index.html' %}
+
+{% block css %}
+  <link rel="stylesheet">
+  <style>
+    
+  </style>
+{% endblock %}
+
+{% block content %}
+
+<section class="col-lg-12 connectedSortable">
+   <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-tv mr-1"></i>
+            {{title}} 
+            </h3>
+            <div class="spinner-border text-secondary"  id="loading" role="status" style="width: 1.3rem;height: 1.3rem;margin-left: 1.2rem;display:none">
+                  <span class="sr-only">Loading...</span>
+            </div>
+            <div class="card-tools" id="ap_list_back"> 
+			  <button type="button" class="btn btn-tool" ><span data-toggle="tooltip" title="Total" class="badge badge-warning">{{moving_logs|length}}</span>  </button>
+              <button type="button" class="btn btn-tool btn_delete"  title="Delete Row" ><i class="fas fa-trash-alt"></i>    
+            </div>
+        </div><!-- /.card-header -->
+        <div id="list_show_card" class="card-body table-responsive p-0 " style="" >
+            <table class="table table-striped table-valign-middle table-head-fixed">
+              <thead>
+                <tr>
+                  <th><div class="form-check">
+                          <input class="form-check-input checkall" style="margin-top: -0.4rem;" type="checkbox">
+                        </div> </th>
+                  <th>Time In</th>   
+                  <th>Camera ID</th>      
+                  <th>Zone Name</th>
+                  <th>Person ID</th>
+                  <th>Alert State</th>
+                  <th>Coordinates</th>    
+                  <th>Equipment</th>    
+                </tr>
+              </thead>
+                <tbody>
+                    {%for item in moving_logs%}
+                    <tr id="{{item.time}}">
+                        <td><div class="form-check">
+                          <input class="form-check-input" style="margin-top: -0.4rem;" type="checkbox"  name="checkbox" value="{{item.time}}">
+                        </div> 
+                        </td>
+						<div title="">
+							<td>{{item.time}}</td>                       
+							<td>{{item.camera_id}}</td>
+							<td>{{item.zone_name}}</td>
+							<td>{{item.person_id}}</td>
+							<td>{{item.state}}</td>
+							<td>{{item.pose}}</td>
+							<td>{{item.equipment}}</td>
+						</div>
+						<td style="height:24px;width:32px"><img src="{{url_for('static', filename='person_capture/view-logo.png')}}" data-toggle="modal" data-target="#myModal{{loop.index}}" alt="Snapshot" width="24" height="32" title="click to view image"> </td>
+                    </tr>
+					<div class="modal fade" id="myModal{{loop.index}}">
+						<div class="modal-dialog modal-dialog-centered modal-sm">
+
+							<!-- Modal body -->
+							<div class="modal-body">
+								<img id="labelID" src="/static/person_capture/{{item.time}}.png" align="middle" />
+							</div>
+						</div>
+					</div>
+                    {%endfor%}
+               </tbody>
+           </table>
+        </div>
+		
+    </div>
+</section>
+	  
+{% endblock %}            
+{% block script  %}
+ 
+<script>
+
+    function Delete() {
+        array = getValue_Checkbox(); 
+        if(checkSelectValue(array) == false)
+            return;
+
+        $("#loading").show();
+        
+        var request = $.ajax({
+			url: "/ajax_del_log",
+			type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+			data: JSON.stringify({
+				data: array 
+			}),
+			success: function(data){
+                DeleteProcessing( data.status, data.results, '/tracking_info');
+			},
+		});       
+    }
+	
+    function Refresh_logs() {
+        var request = $.ajax({
+			url: "/ajax_get_log",
+			type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+			data: JSON.stringify({
+				data: '' 
+			}),
+			success: function(data){
+                
+			},
+		});       
+    }
+	//Refresh_logs()
+	//setInterval(Refresh_logs, (3000 / 1)); // Refresh 3 times a second
+      
+   
+</script>
+    
+{% endblock %}
+ 

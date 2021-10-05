@@ -1,0 +1,449 @@
+{% extends 'index.html' %}
+
+{% block css %}
+  <link rel="stylesheet"> 
+  <style> 
+	.camera-stream {
+		text-align: center;
+		margin-left: auto;
+		margin-right: auto;
+	}
+  </style>
+{% endblock %}
+
+{% block content %}
+
+<section class="col-lg-12 connectedSortable">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-tv mr-1"></i> Camera: {{object.camera_id}}
+            </h3>
+            <div class="spinner-border text-secondary" id="loading" role="status" style="width: 1.3rem;height: 1.3rem;margin-left: 1.2rem;display:none">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+
+        <!-- /.card-header -->
+        <div class="card-header">
+            <h3 class="card-title">
+            <label>Area settings</label>
+            </h3>
+        </div><!-- /.card-header -->
+		<div class="card-body table-responsive p-0">
+			<table class="table table-sm">
+				<tbody>
+					<tr>
+						<td>  
+							<div class="input-group" style="width: 25%;" >
+								<div class="input-group-prepend">
+									<span class="input-group-text">Area name: </span>
+								</div>
+								<input type="text" id="area_name" class="form-control" data-mask="" im-insert="true">
+
+								<div class="input-group-prepend" style="margin-left: 1.2rem">
+									<span class="input-group-text">Area type: </span>
+								</div>
+								<select id="area_type" class="form-control">
+										<option value="warning">warning</option>
+										<option value="danger">danger</option>
+								</select>
+								<!--<input type="text" id="Area-type" class="form-control" data-mask="" im-insert="true">-->
+							</div>
+
+							<div class="form-group" style="margin-top: 1rem;">
+								<select id="required-gears" class="select2_gears" multiple="multiple" data-placeholder="Please select gears."
+								style="width: 25%;">
+								{%for item in safety_gears_list%}
+								<option value="{{item}}">{{item}}</option>
+								{%endfor%}
+								</select>
+							</div>
+							<div class="input-group-prepend">
+								<button type="submit" class="btn btn-primary" onclick="Submit()">Submit</button>
+								<button type="submit" class="btn btn-default" onclick="Cancel()">Cancel</button>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+        <!-- /.card-header -->
+        <div class="card-header">
+            <h3 class="card-title">
+            <label>Area list </label>
+            </h3>
+            <div class="card-tools" id="ap_list_back"> 
+              <button type="button" class="btn btn-tool btn_delete"  title="Delete Row" ><i class="fas fa-trash-alt"></i>          
+            </div>
+        </div><!-- /.card-header -->
+		
+        <div id="list_show_area" class="card-body table-responsive p-0 " style="" >
+            <table id="area-list" class="table table-striped table-valign-middle table-head-fixed">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th style="width: 10%;">Area Name</th>      
+                  <th style="width: 10%;">Type</th>
+                  <th>Points[...]</th>
+                </tr>
+              </thead>
+               <tbody id="area-body">
+               </tbody>
+           </table>
+        </div>
+
+		<div class="card-footer">
+			<div class="camera-stream">
+				<canvas id="zone_screenshot" ></canvas>
+			</div>
+		</div>
+    </div>
+
+</section>
+
+              
+{% endblock %}            
+{% block script  %}
+ 
+<script type="text/javascript" src="/static/dist/js/areas.js"></script>
+<script>
+
+	var gears = $('.select2_gears').select2({
+      theme: 'bootstrap4',
+    });
+
+	var SCREENSHOTS = "/static/screenshots";
+	var CameraArea = "{{ object.camera_id }}";
+
+	var canvas = document.getElementById('zone_screenshot');
+	var context = canvas.getContext("2d");
+
+	// get screenshot image
+	var zone_screen = new Image();
+	zone_screen.src = `${SCREENSHOTS}/${CameraArea}.png`;
+	
+	zone_screen.onload = function () {
+		canvas.width = this.width;
+		canvas.height = this.height;
+	};
+
+	// Add mouse click event listener to canvas
+	canvas.addEventListener('mousedown', MouseClicked, false);
+	document.addEventListener('keydown', KeyPressed, false);
+
+	// init Areas object
+	var AREAS = new Areas(context);
+
+	//get areas from db then draw
+	GetDB_Areas(CameraArea);
+
+	function Display_screenshot() {
+		context.drawImage(zone_screen, 0, 0);
+		Draw_Areas();
+		Show_Areas();
+	}
+
+	function GetDB_Areas(camera_id) {
+		// get area data
+		var request = $.ajax({
+			url: "/ajax_get_area_pools",
+			type: 'post',
+			dataType: 'json',
+			contentType: 'application/json',
+			data: JSON.stringify({
+				data: camera_id
+			}),
+			// save areas
+			success: function (data) {
+				//console.log(data.status);
+				//console.log(data.results);
+				names = data.results['names'];
+				warns = data.results['warns'];
+				dangers = data.results['dangers'];
+				console.log(names);
+
+				AREAS.new_constructor(names, warns, dangers);
+				// display screenshot and draw areas
+				Display_screenshot();
+			},
+		});
+	}
+
+	function Draw_Areas() {
+		//console.log(AREAS.length());
+		if (AREAS.length() > 0) {
+			AREAS.draw_warning();
+			AREAS.draw_danger();
+		}
+	}
+
+	function Show_Areas() {
+		// Show area data
+		enableAreaLabel();
+		//show_areas_text();
+		show_areas_list();
+	}
+
+	function enableAreaLabel() {
+		$("#area_name").removeAttr('disabled');
+		$("#area_type").removeAttr('disabled');
+	}
+
+	function show_areas_text() {
+		// Show area data
+		// { names: [...], areas: [...]}
+		var warns = AREAS.get_warns();
+		var dangers = AREAS.get_dangers();
+
+		$("#area_data").text("Area data: ");
+		var area_show = "Area data: \n";
+
+		for (var i = 0; i < warns.names.length; i++) {
+			area_show = area_show + Get_Area_Text('warning', warns.names[i], warns.areas[i]);
+		}
+		for (var i = 0; i < dangers.names.length; i++) {
+			area_show = area_show + Get_Area_Text('danger', dangers.names[i], dangers.areas[i]);
+		}
+		$("#area_data").text(area_show);
+	};
+
+	function show_areas_list() {
+		// Show area data
+		// { names: [...], areas: [...]}
+		console.log('++++++++++');
+		console.log(AREAS);
+		var warns = AREAS.get_warns();
+		var dangers = AREAS.get_dangers();
+		var innerHtml = '';
+		var tableRef = document.getElementById('area-list').getElementsByTagName('tbody')[0];
+		
+		$("#area-body").empty();
+		
+		for (var i = 0; i < warns.names.length; i++) {
+			var name = warns.names[i];
+			var type = 'warning';
+			var points = JSON.stringify(warns.areas[i], null, '\t')
+			innerHtml = `
+						<tr>
+							<td><div class="form-check">
+								<input class="form-check-input" style="margin-top: -0.4rem;" type="checkbox" onclick="Check_Box_Area()" id="${name}" value="${name}" checked>
+							</div></td>
+							<td>${name}</td>                       
+							<td>${type}</td>
+							<td>${points}</td>
+						</tr>`;
+			tableRef.insertRow().innerHTML = innerHtml;
+		}
+		for (var i = 0; i < dangers.names.length; i++) {
+			var name = dangers.names[i];
+			var type = 'danger';
+			var points = JSON.stringify(dangers.areas[i], null, '\t');
+			innerHtml = `
+						<tr>
+							<td><div class="form-check">
+								<input class="form-check-input" style="margin-top: -0.4rem;" type="checkbox" onclick="Check_Box_Area()" id="${name}" value="${name}" checked>
+							</div></td>
+							<td>${name}</td>                       
+							<td>${type}</td>
+							<td>${points}</td>
+						</tr>`;
+			tableRef.insertRow().innerHTML = innerHtml;
+		}
+		
+	};
+
+	function areaName_exist(name) {
+		var names = AREAS.names;
+		return names.includes(name);
+	};
+
+	function getAreaLabel() {
+		let area_name = $("#area_name").val();
+		let area_type = $("#area_type").val();
+		return [area_name, area_type];
+	}
+
+	function disableAreaLabel() {
+		$("#area_name").attr('disabled', 'disable');
+		$("#area_type").attr('disabled', 'disable');
+	}
+
+	function enableAreaLabel() {
+		$("#area_name").removeAttr('disabled');
+		$("#area_type").removeAttr('disabled');
+	}
+
+	function Cancel() {
+		GetDB_Areas(CameraArea);
+	}
+
+	function Submit() {
+		var AreaS = function () {
+			this.CameraId = CameraArea;
+			this.Names = new Array();
+			this.Dangers = new Array();
+			this.Warnings = new Array();
+			this.Gears = new Array();
+		}
+		var camArea = new AreaS();
+		camArea.Names = AREAS.get_names();
+		camArea.Warnings = AREAS.get_warns().areas;
+		camArea.Dangers = AREAS.get_dangers().areas;
+		camArea.Gears = $("#required-gears").val();
+
+		var myJsonString = JSON.stringify(camArea);
+		console.log(myJsonString);
+
+		var request = $.ajax({
+			url: "/ajax_set_area_pools",
+			type: 'post',
+			dataType: 'json',
+			contentType: 'application/json',
+			data: myJsonString,
+			success: function (data) {
+				console.log(data);
+				if (data.status == true) {
+					window.location.replace('/zone_config');
+				} else {
+					alert(data.results);
+				}
+			},
+		});
+
+	}
+
+	//init A area object
+	var a_area = new A_Area(context);
+
+	function MouseClicked(mouse) {
+		// Get corrent mouse coords
+		var rect = canvas.getBoundingClientRect();
+		var mouseXPos = Math.round((mouse.x - rect.left));
+		var mouseYPos = Math.round((mouse.y - rect.top));
+
+		console.log("Marker added");
+
+		// check input area lable box
+		var label = getAreaLabel();
+		var name = label[0];
+		var type = label[1];
+		if (name && type) {
+			if (AREAS.names.includes(label[0])) {
+				alert("The Area Name was exist please use anothers.");
+				return;
+			}
+			if (a_area.length() == 0) {
+				a_area.set_type(type);
+				a_area.set_name(name);
+			}
+			// add point to area
+			var point = new Point(mouseXPos, mouseYPos);
+			a_area.push_point(point);
+
+		} else {
+			alert("Please input Area Name and Type.");
+			return;
+		}
+
+		if (a_area.length() == 1) {
+			disableAreaLabel();
+		}
+		// Draw area
+		a_area.draw_multi_lines();
+	}
+
+	function KeyPressed(event) {
+		// Get corrent mouse coords
+		var name = event.key;
+		var code = event.code;
+		console.log(name);
+		if (name == "Escape") {
+			if (a_area.length() == 0) {
+				if (AREAS.length() == 0) {
+					return
+				}
+				a_area = AREAS.pop_area()
+			}
+			console.log(a_area.pop_point())
+			if (a_area.length() == 0) {
+				enableAreaLabel();
+				// refresh to show text data
+				//show_areas_text();
+				show_areas_list();
+			} else {
+				disableAreaLabel();
+			}
+
+			Display_screenshot();
+			console.log(a_area)
+			a_area.draw_multi_lines();
+			//context.clearRect(0, 0, 1280, 720);
+		}
+
+		if (name == "Enter") {
+			if (a_area.length() > 2) {
+				a_area.draw_a_area();
+				console.log(a_area);
+				AREAS.push_area(a_area);
+				a_area.clear_constructor();
+			} else {
+				alert("The Area need more than 3(three) points.");
+			}
+			// Show area data
+			Show_Areas();
+		}
+	}
+	
+    function Delete() {
+		var names = AREAS.get_names();
+		names.forEach(function(name) {
+			var checkbox = $(`#${name}`).prop('checked')
+			//console.log(checkbox);
+			if (checkbox == true){
+				// get area data then draw
+				AREAS.delete_area(name);
+			}
+        });
+		//show_areas_list();
+		Display_screenshot();
+    }
+	
+	function Check_Box_Area(){
+		console.log('====');
+		var New_AREAS = AREAS.clone();
+		console.log(New_AREAS.length());
+		console.log(New_AREAS);
+
+		var names = AREAS.get_names();
+		names.forEach(function(name) {
+			var checkbox = $(`#${name}`).prop('checked')
+			console.log(name, checkbox);
+			if (checkbox == false){
+				console.log('delete', name);
+				// get area data then draw
+				AREAS.delete_area(name);
+				console.log(AREAS.length());
+			}else{
+				console.log('add', name);
+				var add_area = New_AREAS.get_area(name);
+				console.log(add_area);
+				AREAS.push_area(add_area);
+			}
+			
+        });
+		//show_areas_list();
+		context.drawImage(zone_screen, 0, 0);
+		Draw_Areas()
+		
+		AREAS = New_AREAS.clone();
+		console.log(AREAS.length());
+	}
+	
+	
+
+</script>
+    
+{% endblock %}
+ 

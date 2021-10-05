@@ -1,0 +1,115 @@
+{% extends 'index.html' %}
+
+{% block css %}
+  <link rel="stylesheet">
+  <style>
+    
+  </style>
+{% endblock %}
+
+{% block content %}
+
+<section class="col-lg-12 connectedSortable">
+   <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-tv mr-1"></i>
+            {{title}} 
+            </h3>
+            <div class="spinner-border text-secondary"  id="loading" role="status" style="width: 1.3rem;height: 1.3rem;margin-left: 1.2rem;display:none">
+                  <span class="sr-only">Loading...</span>
+            </div>
+            <div class="card-tools" id="ap_list_back"> 
+              <button type="button" class="btn btn-tool" ><span data-toggle="tooltip" title="Total" class="badge badge-warning">{{camera_list|length}}</span>  </button>
+              <button type="button" class="btn btn-tool btn_delete"  title="Delete Row" ><i class="fas fa-trash-alt"></i>
+              </button>
+               <!--button type="button" class="btn btn-tool btn_sync"  title="Synchronize"  ><i class="fas fa-sync-alt"></i-->
+              </button>
+              <button type="button" class="btn btn-tool" data-toggle="tooltip" title="Add New" data-widget="chat-pane-toggle" onclick="addNew()">
+                <i class="fas fa-plus"></i>
+             </button>             
+            </div>
+        </div><!-- /.card-header -->
+        <div id="list_show_card" class="card-body table-responsive p-0 " style="" >
+            <table class="table table-striped table-valign-middle table-head-fixed">
+              <thead>
+                <tr>
+                  <th><div class="form-check">
+                          <input class="form-check-input checkall" style="margin-top: -0.4rem;" type="checkbox">
+                        </div> </th>
+                  <th>Camera ID</th>      
+                  <th>Location</th>
+                  <th>Coordinate</th>
+                  <th>IP Address</th>
+                  <th>Port</th>                  
+                  <th>URI</th>    
+                  <th>Snapshot</th>    
+                </tr>
+              </thead>
+                <tbody>
+                    {%for item in camera_list%}
+                    <tr id="{{item.camera_id}}" ondblclick="Edit('{{item.camera_id}}')">
+                        <td><div class="form-check">
+                          <input class="form-check-input" style="margin-top: -0.4rem;" type="checkbox"  name="checkbox" value="{{item.camera_id}}">
+                        </div> 
+                        </td>
+						<div title="double click to draw area">
+							<td>{{item.camera_id}}</td>                       
+							<td>{{item.location}}</td>
+							<td>{{item.coordinate}}</td>
+							<td>{{item.address}}</td>
+							<td>{{item.port}}</td>
+							<td>{{item.uri}}</td>
+						</div>
+						<td style="height:48px;width:64px"><img src="/video_scale/{{item.camera_id}}" alt="Snapshot" width="64" height="48" onclick="View('{{item.camera_id}}')" title="click to view camera"</td
+                    </tr>
+                    {%endfor%}
+               </tbody>
+           </table>
+        </div>
+    </div>
+</section>
+      
+{% endblock %}            
+{% block script  %}
+ 
+<script>
+    
+    function addNew() {
+        window.location.replace('/camera_add');           
+    }
+	
+    function Edit(camera_id) {
+         window.location.replace('/camera_edit/'+camera_id);           
+    }
+   
+    function View(camera_id) {
+         window.location.replace('/camera_view/'+camera_id);           
+    }
+      
+    function Delete() {
+        array = getValue_Checkbox(); 
+        if(checkSelectValue(array) == false)
+            return;
+
+        $("#loading").show();
+        
+        var request = $.ajax({
+			url: "/ajax_del_camera",
+			type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+			data: JSON.stringify({
+				data: array 
+			}),
+			success: function(data){
+                DeleteProcessing( data.status, data.results, '/camera_list');
+			},
+		});       
+    }
+      
+   
+</script>
+    
+{% endblock %}
+ 

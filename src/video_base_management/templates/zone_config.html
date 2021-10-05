@@ -1,0 +1,362 @@
+{% extends 'index.html' %}
+
+{% block css %}
+  <link rel="stylesheet">
+  <style>
+	.camera-stream {
+		text-align: center;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+  </style>
+{% endblock %}
+
+{% block content %}
+
+<section class="col-lg-12 connectedSortable">
+    <div id="show_zone_management"  style="overflow: hidden">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-tv mr-1"></i>
+                    Zone Management
+                </h3>
+				<div class="card-tools">
+					<button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus" ></i></button>
+				</div>
+                <div class="spinner-border text-secondary"  id="loading" role="status" style="width: 1.3rem;height: 1.3rem;margin-left: 1.2rem;display:none">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div><!-- /.card-header -->
+            <div class="card-body table-responsive p-0">
+                <table class="table table-sm">
+                    <thead style="background: #e0e5ecd9;">
+                        <tr>
+                          <th>Select Zone</th>
+                          <th>Safety Gears Required</th>                          
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                          <td style="width: 20%;">  
+							  <select class="select2bs4" id="camera-zone" data-placeholder="Please select gears." style="width:100%;">
+								<option value="default_select" selected >None</option>
+							    {%for item in camera_list%}
+								<option value="{{item.camera_id}}" >{{item.camera_id}}</option>
+							    {%endfor%}
+                              </select>
+						  </td>
+                          <td>
+							<div>
+                              <select id="safety_gears" class="select2_gears"  disabled multiple="multiple" data-placeholder="Please select gears."
+                              style="width:100%;">
+                                <!--{%for item in safety_gears_list%}
+                                <option value="{{item}}">{{item}}</option>
+                                {%endfor%}-->
+                              </select>
+							</div>
+
+						  </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+			
+			<div class="card-footer">
+			  <button type="submit" class="btn btn-primary" onclick="Area_Config()">Zone Settings</button>
+			</div>
+			
+			<div class="card-footer">
+				<div class="card-body table-responsive p-0">
+					<label>Select Deployment Node</label>
+					<table class="table table-sm">
+						<thead style="background: #e0e5ecd9; height:3rem">				
+							<tr style="cursor:pointer;" id="downstream-form">
+								<td style="width: 3%;"><div class="form-check">
+								<input class="form-check-input" type="checkbox" id="CheckShowing" onclick="area_checkbox_click()" style="width:1.5rem; height:1.5rem">
+								
+								</div> </td>
+								
+								<td><label class="form-check-label" for="CheckShowing">
+										Showing danger areas
+									</label></td>
+								<td style="width: 90%;"></td>
+								<td></td>
+							</tr>  
+						</thead>
+					</table>
+				</div>
+				
+				<div class="card-body ">
+					<div class="camera-stream">
+						<canvas id="zone_screenshot" ></canvas>
+					</div>
+				</div>
+			</div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-tv mr-1"></i>
+                    Worker Management
+                </h3>
+				<div class="card-tools">
+					<button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus" ></i></button>
+				</div>
+                <div class="spinner-border text-secondary"  id="loading" role="status" style="width: 1.3rem;height: 1.3rem;margin-left: 1.2rem;display:none">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div><!-- /.card-header -->
+            <div class="card-body table-responsive p-0">
+                <table class="table table-sm">
+                    <thead style="background: #e0e5ecd9;">
+                        <tr>
+                          <th>Select Worker</th>
+                          <th>Zone Allowed</th>                          
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                          <td style="width: 20%;">  
+							  <select class="select2bs4" id="person-name" style="width: 100%;">
+								<option value="default_select" selected >None</option>
+							  {%for item in person_list%}
+								<option value="{{item.person_name}}" >{{item.person_name}}}</option>
+							  {%endfor%}
+                              </select>
+						  </td>
+                          <td>
+                            <div class="form-group">
+                              <select id="zone-permitted" class="select2_zones" disabled multiple="multiple" data-placeholder="Please select worker."
+                              style="width: 100%;">
+                                 {%for item in zone_list%}
+                                <option value="{{item}}">{{item}}</option>
+                                {%endfor%}
+                              </select>
+                            </div>
+						  </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+			<div class="card-footer">
+			  <button type="submit" class="btn btn-primary" onclick="Worker_Config()">Worker Settings</button>
+			</div>	
+        </div>
+    </div>
+</section>
+
+{% endblock %}                        
+{% block script    %}
+
+<script type="text/javascript" src="/static/dist/js/areas.js"></script>
+<script>
+
+    $('.select2bs4').select2({
+      theme: 'bootstrap4',
+    });
+
+	var gears = $('.select2_gears').select2({
+      theme: 'bootstrap4',
+    });
+	
+    var zones = $('.select2_zones').select2({
+      theme: 'bootstrap4',
+    });
+	
+	var SCREENSHOTS = "/static/screenshots";
+	var CAMERA_ZONE = '';
+	
+	var canvas = document.getElementById('zone_screenshot');
+	var context = canvas.getContext("2d");
+
+	// init area
+	var AREAS = new Areas(context, [], [], []);
+
+	function Select_EmptyZone() {
+		canvas.width = 320;
+		canvas.height = 240;
+		context.font = "24px Arial";
+		context.fillText("Please select a zone.",100,100);
+		gears_required_default([]);
+	}
+	
+	function Select_EmptyWorker() {
+		zone_permitted_default([]);
+	}
+	
+	function Select_Worker(person_name) {
+		zone_permitted_change(person_name);
+	}
+
+	function Select_Zone(camera_id) {
+	
+		CAMERA_ZONE = camera_id
+		
+		var zone_screen = new Image();
+		zone_screen.src = `${SCREENSHOTS}/${camera_id}.png`;
+		
+		zone_screen.onload = function(){    
+
+			console.log(this.width);
+			console.log(this.height);
+
+			canvas.width = this.width;
+			canvas.height = this.height;
+			
+			context.drawImage(zone_screen, 0, 0); 
+
+			//console.log($('#CheckShowing').prop('checked'));
+			var checkbox = $('#CheckShowing').prop('checked')
+			if (checkbox == true){
+				// get area data then draw
+				Draw_Areas(camera_id);
+			}
+		};
+		safety_gears_change(camera_id);
+	}
+	
+    function safety_gears_change(camera_id) {
+		//$("#safety_gears").disabled = false;
+        var request = $.ajax({
+			url: "/ajax_get_safety_gears",
+			type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+			data: JSON.stringify({
+				CameraId: camera_id	
+			}),
+			success: function(data){
+				gears_required_default(data.results);
+				
+			},
+		});        
+    }
+	
+    function zone_permitted_change(person_name) {
+        var request = $.ajax({
+			url: "/ajax_get_zone_permitted",
+			type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+			data: JSON.stringify({
+				PersonName: person_name	
+			}),
+			success: function(data){
+				zone_permitted_default(data.results);
+			},
+		});  
+        
+    }
+	
+	function zone_permitted_default(received_zones){
+		zones.empty();
+	
+		received_zones.forEach(function(e){
+			zones.append($('<option>').text(e));
+		});
+		zones.val(received_zones).trigger("change"); 
+	}
+	
+	function gears_required_default(received_gears){
+		gears.empty();
+		received_gears.forEach(function(e){
+			gears.append($('<option>').text(e));
+			
+		});
+		console.log(gears);
+		gears.val(received_gears).trigger("change"); 
+		
+	}
+	
+	function Draw_Areas(camera_id){
+		// get area data then draw
+		var request = $.ajax({
+			url: "/ajax_get_danger_pools",
+			type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+			data: JSON.stringify({
+				data: camera_id 
+			}),
+			// draw areas
+			success: function(data){
+				//console.log(data.status);
+				//console.log(data.results);
+				names = data.results['names'];
+				warns = data.results['warns'];
+				dangers = data.results['dangers'];
+				//console.log(names);
+				
+				if (names.length > 0){
+					AREAS.new_constructor(names, warns, dangers);
+					AREAS.draw_warning();
+					AREAS.draw_danger();
+				}
+			},
+		});  
+	}
+	
+	function area_checkbox_click(){
+		camera_id = CAMERA_ZONE;
+		Select_Zone(camera_id);
+	}
+	
+	function main_check_selected(){
+		var zone = $("#camera-zone").val(); 
+		var person_name = $("#person-name").val(); 
+		
+		console.log(zone);
+		console.log(person_name);
+		
+		if (zone =='default_select'){
+			Select_EmptyZone()
+		}else{
+			Select_Zone(zone);
+		}
+		if (person_name == 'default_select'){
+			Select_EmptyWorker();
+		}else{
+			Select_Worker(person_name);
+		}
+		
+	}
+	
+	main_check_selected();
+	
+	function Area_Config(){
+		var zone = $("#camera-zone").val(); 
+		if (zone == 'default_select'){
+			return;
+		}
+		window.location.replace('camera_edit/'+zone); 
+	}
+	
+	function Worker_Config(){
+		var person_name = $("#person-name").val(); 
+	}
+	
+    $( "#camera-zone" ).change(function() {
+        if (this.value == 'default_select') {
+            Select_EmptyZone(); 
+        }
+        else {
+			Select_Zone(this.value);
+        }    
+    });
+
+    $( "#person-name" ).change(function() {
+        if (this.value == 'default_select') {
+            Select_EmptyWorker(); 
+        }
+        else {
+			Select_Worker(this.value);
+        }    
+    });
+	$("[data-card-widget='collapse']").click();
+
+
+</script>
+        
+{% endblock %}

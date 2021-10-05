@@ -1,0 +1,60 @@
+{% extends 'index.html' %} {% block css %}
+<link rel="stylesheet" />
+<style>
+  .camera-stream {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
+{% endblock %} {% block content %}
+
+<section class="col-lg-12 connectedSortable">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="fas fa-tv mr-1"></i>
+        {{object.camera_id}}
+      </h3>
+      <div
+        class="spinner-border text-secondary"
+        id="loading"
+        role="status"
+        style="
+          width: 1.3rem;
+          height: 1.3rem;
+          margin-left: 1.2rem;
+          display: none;
+        "
+      >
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+    <!-- /.card-header -->
+
+    <div id="add_show_card" class="card-body" style="overflow: hidden">
+      <form role="form">
+        <div
+          id="video-feed"
+          class="camera-stream"
+          width="{{width}}"
+          height="{{height}}"
+        >
+          <!--<h1>{{object.camera_id}}</h1>-->
+          <img
+            src="/video_feed/{{object.camera_id}}"
+            alt="video stream"
+            width="{{width}}"
+            height="{{height}}"
+          />';
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+{% endblock %} {% block script %}
+
+<script></script>
+
+{% endblock %}
